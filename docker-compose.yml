@@ -1,0 +1,126 @@
+# Full local stack: Postgres + Hardhat chain + contract deployment + issuer + verifier + web.
+#   npm run setup        # creates .env with fresh keys (once)
+#   docker compose up --build
+#   open http://localhost:5173
+# Reset everything (chain state is in-memory, so also wipe DB + deployments):
+#   docker compose down -v
+
+name: blockcred
+
+x-app: &app
+  build:
+    context: .
+    target: dev
+  image: blockcred-dev
+  env_file: .env
+  volumes:
+    - deployments:/app/contracts/deployments
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: blockcred
+      POSTGRES_PASSWORD: blockcred
+      POSTGRES_DB: blockcred
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blockcred"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  chain:
+    <<: *app
+    working_dir: /app/contracts
+    command: npx hardhat node --hostname 0.0.0.0
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]})}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  deployer:
+    <<: *app
+    working_dir: /app/contracts
+    command: npx hardhat run scripts/deploy.js --network docker
+    environment:
+      DOCKER_CHAIN_RPC_URL: http://chain:8545
+    depends_on:
+      chain:
+        condition: service_healthy
+    restart: "no"
+
+  issuer:
+    <<: *app
+    command: node services/issuer/src/index.js
+    environment:
+      DATABASE_URL: postgres://blockcred:blockcred@postgres:5432/blockcred
+      RPC_URL: http://chain:8545
+      CHAIN_ID: "31337"
+      DEPLOYMENTS_FILE: contracts/deployments/docker.json
+      ISSUER_REGISTRY_ADDRESS: ""
+      REVOCATION_REGISTRY_ADDRESS: ""
+      MERKLE_ANCHOR_ADDRESS: ""
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      postgres:
+        condition: service_healthy
+      deployer:
+        condition: service_completed_successfully
+
+  verifier:
+    <<: *app
+    command: node services/verifier/src/index.js
+    environment:
+      DATABASE_URL: postgres://blockcred:blockcred@postgres:5432/blockcred
+      RPC_URL: http://chain:8545
+      CHAIN_ID: "31337"
+      DEPLOYMENTS_FILE: contracts/deployments/docker.json
+      ISSUER_REGISTRY_ADDRESS: ""
+      REVOCATION_REGISTRY_ADDRESS: ""
+      MERKLE_ANCHOR_ADDRESS: ""
+      # Inside docker, "localhost:4000" (the issuer's did:web host) is reachable as issuer:4000
+      DID_WEB_HOST_OVERRIDES: '{"localhost:4000":"http://issuer:4000"}'
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      postgres:
+        condition: service_healthy
+      deployer:
+        condition: service_completed_successfully
+      issuer:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: npm run dev -w apps/web -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    depends_on:
+      - issuer
+      - verifier
+
+volumes:
+  pgdata:
+  deployments:

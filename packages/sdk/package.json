@@ -1,0 +1,36 @@
+{
+  "name": "@blockcred/sdk",
+  "version": "1.0.0",
+  "description": "BlockCred SDK: SD-JWT VC issuance/presentation/verification, did:web resolution and on-chain trust checks",
+  "type": "module",
+  "license": "MIT",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./util": "./src/util.js",
+    "./jws": "./src/jws.js",
+    "./sdjwt": "./src/sdjwt.js",
+    "./did": "./src/did.js",
+    "./credential": "./src/credential.js",
+    "./chain": "./src/chain.js",
+    "./merkle": "./src/merkle.js",
+    "./verify": "./src/verify.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "ethers": "^6.13.4"
+  },
+  "devDependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.7"
+  }
+}

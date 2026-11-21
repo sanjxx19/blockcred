@@ -1,0 +1,27 @@
+{
+  "name": "@blockcred/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BlockCred smart contracts (IssuerRegistry, RevocationRegistry, MerkleAnchor)",
+  "license": "MIT",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "node": "hardhat node",
+    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:amoy": "hardhat run scripts/deploy.js --network amoy",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "register-issuer": "hardhat run scripts/register-issuer.js",
+    "issuer-admin": "hardhat run scripts/issuer-admin.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/merkle-tree": "^1.0.7",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.17"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0"
+  }
+}

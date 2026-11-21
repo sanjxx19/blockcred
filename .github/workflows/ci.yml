@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Compile & test contracts
+        run: npm run test:contracts
+      - name: SDK tests
+        run: npm run test:sdk
+      - name: Issuer unit tests
+        run: npm run test:issuer
+      - name: Build web app
+        run: npm run build:web
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run setup
+      - name: Start stack
+        run: docker compose up -d --build --wait issuer verifier
+      - name: End-to-end scenario
+        run: npm run e2e
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs

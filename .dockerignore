@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+contracts/artifacts
+contracts/cache
+contracts/typechain-types
+contracts/coverage
+contracts/deployments
+.env
+secrets
+.git
+*.log

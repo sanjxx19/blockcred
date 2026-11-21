@@ -1,0 +1,24 @@
+{
+  "name": "@blockcred/verifier-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BlockCred verifier: nonce-bound presentation requests, verification, consent log",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@blockcred/sdk": "*",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.23.8"
+  }
+}

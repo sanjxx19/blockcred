@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# secrets
+.env
+.env.*
+!.env.example
+secrets/
+
+# hardhat
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage.json
+# local deployments change every run; commit testnet ones deliberately with `git add -f`
+contracts/deployments/hardhat.json
+contracts/deployments/localhost.json
+contracts/deployments/docker.json

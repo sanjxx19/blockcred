@@ -1,0 +1,19 @@
+# Threat model
+
+| # | Threat | Mitigation in BlockCred | Residual risk / production advice |
+|---|---|---|---|
+| T1 | **Forged credential** (fake issuer or edited claims) | ES256 signature verified against the key in the issuer's did:web `assertionMethod`. Every disclosure must hash into the signed `_sd` array. Issuer must be `Active` in `IssuerRegistry` | An attacker who also controls the issuer's web domain *and* is accredited on-chain. Governance accreditation is the backstop |
+| T2 | **Issuer signing-key compromise** | Rotate with `npm run rotate-issuer-key -- --compromised`: the key leaves the DID document and its credentials stop verifying. Governance can `suspendIssuer` immediately on-chain | Re-issue legitimate credentials. Use HSM/KMS. Anchor DID-document history on-chain (future work) |
+| T3 | **Issuer controller (Ethereum) key compromise** | Governor-only `rotateController`; `suspendIssuer` blocks anchoring. Revocation is idempotent and cannot be undone, so an attacker can revoke but never un-revoke | Keep the controller in KMS with low balance and alerts; multi-sig governance |
+| T4 | **Governance compromise** | Roles split: admin, governor and pauser | Use a Safe multi-sig + TimelockController so changes are visible before they take effect |
+| T5 | **Stolen credential** (copied from a wallet / backup) | Credentials are bound to the holder key (`cnf.jwk`). Verifiers require a KB-JWT signed by that key. The browser key is non-extractable | Malware on the device can still *use* the key. Native wallets should use Secure Enclave / StrongBox + biometrics |
+| T6 | **Replay** of a captured presentation | KB-JWT includes the verifier's single-use `nonce`, the `aud` and `iat` (≤ 5 min). The verifier consumes the nonce atomically. `sd_hash` stops disclosures being added or removed | — |
+| T7 | **Verifier impersonation / phishing** (fake request) | `aud` binding means the presentation is useless to any other verifier. The wallet refuses non-HTTPS response URIs (except localhost) and shows the verifier identity and purpose | Requests are not signed. Add JAR (signed request objects) tied to a verifier registry |
+| T8 | **Malicious status pointer** (credential claims revocation lives in an attacker contract) | Verifier pins `chain_id` and the `RevocationRegistry` address | — |
+| T9 | **Verifier collusion / correlation** | Selective disclosure; random status indexes; decoy digests; whole-word revocation reads (herd privacy); no on-chain PII | The issuer signature and `cnf.jwk` are identical across presentations, so colluding verifiers can link them. Mitigate with batch issuance (several credentials per holder) or BBS+ (future work) |
+| T10 | **Holder wallet loss** | The issuer can re-issue through a new offer (the old credential can be revoked) | Encrypted backup / multi-device wallets |
+| T11 | **Issuer offline / did:web domain down** | Verdict `ISSUER_UNREACHABLE` (fail-closed); verifier caches DID docs (`DID_CACHE_TTL_SEC`) | Host the DID doc on a CDN; anchor DID-doc hash on-chain |
+| T12 | **Offer-code theft before redemption** | Codes are 192-bit random, stored hashed, single-use, expire (`OFFER_TTL_HOURS`), rate-limited | Deliver codes over an authenticated channel (student portal / SSO) |
+| T13 | **RPC provider lies or is down** | Multiple RPC URLs (`FallbackProvider`); verification fails closed on errors | Use a quorum > 1 or run your own node for high-assurance verifiers |
+| T14 | **API abuse / DoS** | Rate limits, body-size limits, zod validation, bounded caches, short request TTLs | WAF / API gateway in production |
+| T15 | **Smart-contract bugs** | Small audited-library-based contracts, custom errors, extensive tests, no upgradeability surface | Independent audit before mainnet |
