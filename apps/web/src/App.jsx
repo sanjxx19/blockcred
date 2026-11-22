@@ -1,49 +1,51 @@
 import { useEffect, useState } from 'react';
-import Issuer from './pages/Issuer.jsx';
-import Verifier from './pages/Verifier.jsx';
-import Wallet from './pages/Wallet.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import AuthPage from './pages/AuthPage.jsx';
+import EmployerDashboard from './pages/EmployerDashboard.jsx';
+import StudentDashboard from './pages/StudentDashboard.jsx';
+import UniversityDashboard from './pages/UniversityDashboard.jsx';
+import { currentUser, logout } from './lib/session.js';
 
-const ROUTES = {
-  wallet: { label: 'Wallet', subtitle: 'Student', Component: Wallet },
-  issuer: { label: 'Issuer', subtitle: 'University', Component: Issuer },
-  verifier: { label: 'Verifier', subtitle: 'Employer', Component: Verifier },
+const DASHBOARDS = {
+  admin: { label: 'Accreditation admin', Component: AdminDashboard },
+  university: { label: 'University', Component: UniversityDashboard },
+  student: { label: 'Student wallet', Component: StudentDashboard },
+  employer: { label: 'Employer', Component: EmployerDashboard },
 };
 
-function parseHash() {
-  const [path, query = ''] = window.location.hash.replace(/^#\/?/, '').split('?');
-  return { route: ROUTES[path] ? path : 'wallet', params: new URLSearchParams(query) };
-}
-
 export default function App() {
-  const [{ route, params }, setLocation] = useState(parseHash);
+  const [me, setMe] = useState(undefined);
+
   useEffect(() => {
-    const onChange = () => setLocation(parseHash());
-    window.addEventListener('hashchange', onChange);
-    return () => window.removeEventListener('hashchange', onChange);
+    currentUser().then(setMe);
   }, []);
-  const { Component } = ROUTES[route];
+
+  const doLogout = async () => {
+    await logout(me);
+    setMe(null);
+  };
+
+  if (me === undefined) return <div className="loading">Loading…</div>;
+  const dash = me && DASHBOARDS[me.user.role];
 
   return (
     <>
       <header className="topbar">
-        <a className="brand" href="#/wallet">
+        <span className="brand">
           <span className="logo">◆</span> BlockCred
-        </a>
-        <nav>
-          {Object.entries(ROUTES).map(([key, r]) => (
-            <a key={key} href={`#/${key}`} className={key === route ? 'active' : ''}>
-              {r.label}
-              <small>{r.subtitle}</small>
-            </a>
-          ))}
-        </nav>
+        </span>
+        {me && (
+          <div className="user">
+            <span>
+              <strong>{me.user.name}</strong>
+              <small>{dash.label} · {me.user.email}</small>
+            </span>
+            <button className="secondary" onClick={doLogout}>Log out</button>
+          </div>
+        )}
       </header>
-      <main>
-        <Component key={`${route}?${params}`} params={params} />
-      </main>
-      <footer>
-        Verifiable credentials with did:web, SD-JWT VC and on-chain trust anchors · demo build
-      </footer>
+      <main>{me ? <dash.Component me={me} onLogout={doLogout} /> : <AuthPage onAuthenticated={setMe} />}</main>
+      <footer>did:web · SD-JWT VC · EVM trust registry · open-source demo</footer>
     </>
   );
 }

@@ -1,16 +1,15 @@
 # syntax=docker/dockerfile:1.7
 # Multi-target image for the whole monorepo.
 #   dev      -> everything (Hardhat, services, Vite dev server)  [used by docker-compose.yml]
-#   service  -> production runtime for issuer / verifier (no dev deps, non-root)
-#   web      -> static web app served by nginx
+#   service  -> production runtime for the API (no dev deps, non-root)
+#   web      -> static web app served by nginx (proxies /api and /issuers to the API)
 
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY packages/sdk/package.json packages/sdk/
 COPY contracts/package.json contracts/
-COPY services/issuer/package.json services/issuer/
-COPY services/verifier/package.json services/verifier/
+COPY services/api/package.json services/api/
 COPY apps/web/package.json apps/web/
 RUN npm install --no-audit --no-fund
 
@@ -21,10 +20,8 @@ RUN npm run compile -w contracts
 
 FROM deps AS web-build
 COPY . .
-ARG VITE_ISSUER_URL=http://localhost:4000
-ARG VITE_VERIFIER_URL=http://localhost:5000
 ARG VITE_EXPLORER_TX_URL=
-ENV VITE_ISSUER_URL=$VITE_ISSUER_URL VITE_VERIFIER_URL=$VITE_VERIFIER_URL VITE_EXPLORER_TX_URL=$VITE_EXPLORER_TX_URL
+ENV VITE_EXPLORER_TX_URL=$VITE_EXPLORER_TX_URL
 RUN npm run build -w apps/web
 
 FROM nginx:1.27-alpine AS web
@@ -41,6 +38,5 @@ COPY services services
 COPY --from=deps /app/node_modules node_modules
 RUN npm prune --omit=dev --no-audit --no-fund || true
 USER node
-EXPOSE 4000 5000
-# Override per service, e.g. `node services/verifier/src/index.js`
-CMD ["node", "services/issuer/src/index.js"]
+EXPOSE 4000
+CMD ["node", "services/api/src/index.js"]

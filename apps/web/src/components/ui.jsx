@@ -76,6 +76,8 @@ const VERDICT_TEXT = {
   NOT_ANCHORED: 'Not anchored on-chain',
   ISSUER_UNREACHABLE: 'Issuer DID unreachable',
   INVALID_FORMAT: 'Malformed presentation',
+  DECLINED: 'Declined by student',
+  ERROR: 'Verification error',
 };
 
 export function VerdictBadge({ verdict }) {
@@ -154,6 +156,38 @@ export function QrScanner({ onResult, onClose }) {
       <button className="secondary" onClick={onClose}>
         Close scanner
       </button>
+    </div>
+  );
+}
+
+const STATUS_STYLE = {
+  active: 'ok', issued: 'ok', completed: 'ok', anchored: 'ok',
+  pending: 'warn', awaiting_student: 'warn', processing: 'warn',
+  suspended: 'bad', revoked: 'bad', rejected: 'bad', declined: 'bad', failed: 'bad', expired: 'muted',
+};
+const STATUS_TEXT = { awaiting_student: 'Awaiting student sign-up' };
+
+export function StatusBadge({ status }) {
+  if (!status) return null;
+  return <span className={`badge badge-${STATUS_STYLE[status] ?? 'muted'}`}>{STATUS_TEXT[status] ?? status.replace(/_/g, ' ')}</span>;
+}
+
+export function Field({ label, hint, children }) {
+  return (
+    <label>
+      <span>
+        {label} {hint && <span className="muted small">{hint}</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+export function Stat({ label, value }) {
+  return (
+    <div className="stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

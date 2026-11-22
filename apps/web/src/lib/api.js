@@ -1,24 +1,22 @@
 export class ApiError extends Error {
   constructor(status, body) {
-    super(body?.message || body?.error || `HTTP ${status}`);
+    super(body?.message || body?.error || `Request failed (HTTP ${status})`);
     this.status = status;
-    this.body = body;
+    this.code = body?.error;
   }
 }
 
-/** fetch wrapper: JSON in/out, bearer auth, useful errors. */
-export async function api(base, path, { method = 'GET', body, apiKey, headers = {}, raw = false } = {}) {
-  const init = { method, headers: { ...headers } };
-  if (apiKey) init.headers.authorization = `Bearer ${apiKey}`;
+/** Same-origin JSON client. The session lives in an HttpOnly cookie. */
+export async function api(path, { method = 'GET', body, raw = false, headers = {} } = {}) {
+  const init = { method, headers: { ...headers }, credentials: 'same-origin' };
   if (body !== undefined) {
-    if (raw) {
-      init.body = body;
-    } else {
+    if (raw) init.body = body;
+    else {
       init.headers['content-type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
   }
-  const res = await fetch(`${base}${path}`, init);
+  const res = await fetch(`/api${path}`, init);
   const text = await res.text();
   let data = null;
   try {
@@ -26,6 +24,6 @@ export async function api(base, path, { method = 'GET', body, apiKey, headers = 
   } catch {
     data = { message: text };
   }
-  if (!res.ok && !(res.status === 422 && data?.verdict)) throw new ApiError(res.status, data);
+  if (!res.ok) throw new ApiError(res.status, data);
   return data;
 }

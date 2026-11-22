@@ -22,8 +22,8 @@ jobs:
         run: npm run test:contracts
       - name: SDK tests
         run: npm run test:sdk
-      - name: Issuer unit tests
-        run: npm run test:issuer
+      - name: API unit tests
+        run: npm run test:api
       - name: Build web app
         run: npm run build:web
 
@@ -38,7 +38,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run setup
       - name: Start stack
-        run: docker compose up -d --build --wait issuer verifier
+        run: docker compose up -d --build --wait api
       - name: End-to-end scenario
         run: npm run e2e
       - name: Logs on failure

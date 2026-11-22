@@ -1,6 +1,6 @@
 {
   "name": "blockcred",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Decentralised academic credential verification: did:web + SD-JWT VC + EVM smart contracts",
   "license": "MIT",
@@ -15,21 +15,19 @@
   },
   "scripts": {
     "setup": "node scripts/setup-env.mjs",
-    "rotate-issuer-key": "node scripts/rotate-issuer-key.mjs",
     "chain": "npm run node -w contracts",
     "compile": "npm run compile -w contracts",
     "deploy:local": "npm run deploy:localhost -w contracts",
     "deploy:amoy": "npm run deploy:amoy -w contracts",
     "deploy:sepolia": "npm run deploy:sepolia -w contracts",
     "db:up": "docker compose up -d postgres",
-    "dev:issuer": "npm run dev -w services/issuer",
-    "dev:verifier": "npm run dev -w services/verifier",
     "dev:web": "npm run dev -w apps/web",
     "build:web": "npm run build -w apps/web",
-    "test": "npm run test:contracts && npm run test:sdk && npm run test:issuer",
+    "test": "npm run test:contracts && npm run test:sdk && npm run test:api",
     "test:contracts": "npm run test -w contracts",
     "test:sdk": "npm run test -w packages/sdk",
-    "test:issuer": "npm run test -w services/issuer",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "dev:api": "npm run dev -w services/api",
+    "test:api": "npm run test -w services/api"
   }
 }

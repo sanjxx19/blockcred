@@ -22,18 +22,16 @@ None of these identifies a student on its own.
 - **Issuance:** accepting an offer in the wallet is an explicit, affirmative act. The student must hold the code and sign a proof of possession.
 - **Sharing:**
   - Every presentation passes through a consent screen showing the verifier's identity, the stated **purpose** and the requested fields. The student can untick any field.
-  - Consent is recorded in two places: the wallet's local *Consent history*, and the verifier's `verifier_consent_log` (timestamp, holder key thumbprint, issuer DID, **field names only**, purpose, outcome).
+  - Every response (or decline) is recorded in `consent_log`: timestamp, student, employer, issuer DID, **field names only**, purpose, outcome. The student sees it as *Sharing history*.
 - **Withdrawal:** consent is per presentation, so there is no standing permission to withdraw. Each new verification needs a new consent.
 
 ## Purpose limitation and data minimisation (s.4–s.8)
 
 - Verifiers declare a purpose and request specific fields. The UI encourages asking only for what is needed.
 - SD-JWT selective disclosure means the verifier cryptographically **cannot** see undisclosed fields (e.g. CGPA).
-- Verifier retention: disclosed values are deleted from `verifier_requests.result` after `RESULT_RETENTION_SEC` (default 1 h) by a background job. The verdict and the field-name log remain for accountability.
-- Issuer minimisation:
-  - the issued credential is **not stored** (only `keccak256(jwt)`);
-  - offer claims are purged at redemption (`PURGE_OFFER_CLAIMS=true`);
-  - offer codes are stored as hashes.
+- Employer retention: disclosed values are deleted from `verification_requests.result` after `RESULT_RETENTION_HOURS` (default 30 days) by a background job. The verdict and the field-name log remain for accountability.
+- Issuer side: the university keeps its own record (its system of record) plus a leaf hash. The signed credential lives in the student's wallet.
+- Passwords are never transmitted. Student wallet keys are encrypted client-side.
 
 ## Accuracy (s.8(3))
 
@@ -41,16 +39,16 @@ Credentials come from the issuer's system of record and are signed. Corrections 
 
 ## Security safeguards (s.8(5))
 
-See [THREAT_MODEL.md](THREAT_MODEL.md): signature verification, holder binding, replay protection, rate limiting, hashed secrets, least-privilege roles and audit logs (`issuer_audit_log`).
+See [THREAT_MODEL.md](THREAT_MODEL.md): signature verification, holder binding, replay protection, rate limiting, hashed secrets, least-privilege roles and audit logs (`audit_log`).
 
 ## Rights of the Data Principal (s.11–s.14)
 
 | Right | How it is served |
 |---|---|
-| Access / summary | The wallet holds the complete credential and the full consent history |
+| Access / summary | The student dashboard shows every credential and the full sharing history |
 | Correction | Revoke + re-issue (admin flow) |
-| Erasure | Holder: **Erase wallet** deletes the key, credentials and history. Verifier: automatic purge plus deletion on request. Issuer: see the tension below |
-| Grievance redressal | Each fiduciary must publish a grievance contact; `issuer_audit_log` and `verifier_consent_log` provide the evidence trail |
+| Erasure | Student: **Delete my account and wallet** removes the account, wallet key and wallet; consent-log rows are de-identified. Employer: automatic purge. University: see the tension below |
+| Grievance redressal | Each fiduciary must publish a grievance contact; `audit_log` and `consent_log` provide the evidence trail |
 | Nominee | Out of scope for the software (policy) |
 
 ## Open policy questions

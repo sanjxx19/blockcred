@@ -4,27 +4,35 @@
     {
       "uri": "in.gov.digilocker.mock-DGCER-2026-0001",
       "doctype": "DGCER",
-      "issuer": { "name": "Demo Institute of Technology", "orgId": "mock-001" },
+      "issuer": {
+        "name": "Demo Institute of Technology",
+        "orgId": "mock-001"
+      },
       "data": {
         "rollNo": "ME2022044",
         "studentName": "Rohan Das",
         "course": "B.Tech",
         "branch": "Mechanical",
         "cgpa": "8.10",
-        "resultDate": "2026-06-20T00:00:00+05:30"
+        "resultDate": "2026-06-20T00:00:00+05:30",
+        "email": "rohan@example.com"
       }
     },
     {
       "uri": "in.gov.digilocker.mock-DGCER-2026-0002",
       "doctype": "DGCER",
-      "issuer": { "name": "Demo Institute of Technology", "orgId": "mock-001" },
+      "issuer": {
+        "name": "Demo Institute of Technology",
+        "orgId": "mock-001"
+      },
       "data": {
         "rollNo": "CS2022003",
         "studentName": "Karan Mehta",
         "course": "B.Tech",
         "branch": "Computer Science",
         "cgpa": 9.02,
-        "resultDate": "2026-06-15T00:00:00+05:30"
+        "resultDate": "2026-06-15T00:00:00+05:30",
+        "email": "karan@example.com"
       }
     }
   ]

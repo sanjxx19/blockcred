@@ -1,43 +1,39 @@
 #!/usr/bin/env node
-// Creates .env from .env.example and fills in freshly generated secrets:
-//   - ISSUER_KEYS            (P-256 signing key for credentials)
-//   - ISSUER_ADMIN_API_KEY   (issuer admin API)
-//   - VERIFIER_API_KEY       (verifier back-end API)
+// Creates .env from .env.example with freshly generated secrets:
+//   MASTER_ENCRYPTION_KEY  (encrypts university keys at rest)
+//   ADMIN_PASSWORD         (accreditation-admin login)
 // Usage: npm run setup [-- --force]
 
-import { randomBytes, webcrypto } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const envPath = path.join(root, '.env');
-const examplePath = path.join(root, '.env.example');
 const force = process.argv.includes('--force');
 
 if (fs.existsSync(envPath) && !force) {
-  console.log('.env already exists. Re-run with `npm run setup -- --force` to regenerate (this replaces your keys).');
+  const env = fs.readFileSync(envPath, 'utf8');
+  if (!/^MASTER_ENCRYPTION_KEY=\S+/m.test(env)) {
+    console.log('Your .env is from BlockCred v1. Re-run with `npm run setup -- --force` to upgrade it.');
+  } else {
+    console.log('.env already exists (use `npm run setup -- --force` to regenerate).');
+    console.log(`Admin login: ${env.match(/^ADMIN_EMAIL=(.*)$/m)?.[1]} / ${env.match(/^ADMIN_PASSWORD=(.*)$/m)?.[1]}`);
+  }
   process.exit(0);
 }
 
-async function generateIssuerKey(id) {
-  const { privateKey } = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
-  const { kty, crv, x, y, d } = await webcrypto.subtle.exportKey('jwk', privateKey);
-  return { id, status: 'active', privateJwk: { kty, crv, x, y, d } };
-}
-
-export function setEnvValue(text, key, value) {
-  const line = `${key}=${value}`;
+const set = (text, key, value) => {
   const re = new RegExp(`^${key}=.*$`, 'm');
-  return re.test(text) ? text.replace(re, () => line) : `${text.trimEnd()}\n${line}\n`;
-}
+  return re.test(text) ? text.replace(re, () => `${key}=${value}`) : `${text.trimEnd()}\n${key}=${value}\n`;
+};
 
-let env = fs.readFileSync(examplePath, 'utf8');
-const keys = [await generateIssuerKey('key-1')];
-env = setEnvValue(env, 'ISSUER_KEYS', `'${JSON.stringify(keys)}'`);
-env = setEnvValue(env, 'ISSUER_ADMIN_API_KEY', randomBytes(24).toString('base64url'));
-env = setEnvValue(env, 'VERIFIER_API_KEY', randomBytes(24).toString('base64url'));
+let env = fs.readFileSync(path.join(root, '.env.example'), 'utf8');
+const adminPassword = randomBytes(9).toString('base64url');
+env = set(env, 'MASTER_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
+env = set(env, 'ADMIN_PASSWORD', adminPassword);
 fs.writeFileSync(envPath, env, { mode: 0o600 });
 
-console.log('Created .env with fresh issuer signing key and API keys.');
-console.log('Issuer admin API key (also in .env):', env.match(/^ISSUER_ADMIN_API_KEY=(.*)$/m)[1]);
+console.log('Created .env');
+console.log(`Accreditation admin login: ${env.match(/^ADMIN_EMAIL=(.*)$/m)[1]} / ${adminPassword}`);

@@ -1,0 +1,27 @@
+{
+  "name": "@blockcred/api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BlockCred platform API: accounts & roles, multi-issuer did:web, SD-JWT VC issuance, verification, on-chain anchoring/revocation",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@blockcred/sdk": "*",
+    "@openzeppelin/merkle-tree": "^1.0.7",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.23.8"
+  }
+}

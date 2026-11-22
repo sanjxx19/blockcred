@@ -6,16 +6,14 @@
 // Env (all optional on local networks):
 //   ADMIN_ADDRESS               DEFAULT_ADMIN_ROLE + PAUSER_ROLE holder (default: deployer)
 //   GOVERNOR_ADDRESSES          comma-separated GOVERNOR_ROLE holders (default: deployer)
-//   ISSUER_DID                  issuer to register (default on local nets: derived from ISSUER_PUBLIC_URL)
-//   ISSUER_CONTROLLER_ADDRESS   account that operates the issuer (default on local nets: Hardhat account #1)
+//   ISSUER_DID + ISSUER_CONTROLLER_ADDRESS  optional: pre-register one issuer
 //   CREDENTIAL_VCTS             comma-separated vct values to register (default: degree vct)
 
 const hre = require('hardhat');
-const { LOCAL_NETWORKS, DEFAULT_VCT, didWebFromUrl, writeDeployment } = require('./lib');
+const { DEFAULT_VCT, writeDeployment } = require('./lib');
 
 async function main() {
   const { ethers, network } = hre;
-  const isLocal = LOCAL_NETWORKS.has(network.name);
   const signers = await ethers.getSigners();
   if (!signers.length) throw new Error('No deployer account. Set DEPLOYER_PRIVATE_KEY in .env');
   const deployer = signers[0];
@@ -81,15 +79,16 @@ async function main() {
     console.log(`Registered schema ${vct}`);
   }
 
-  const issuerDid =
-    process.env.ISSUER_DID || (isLocal ? didWebFromUrl(process.env.ISSUER_PUBLIC_URL || 'http://localhost:4000') : '');
-  const controller = process.env.ISSUER_CONTROLLER_ADDRESS || (isLocal && signers[1] ? signers[1].address : '');
+  // Universities are normally registered by the accreditation admin from the web app.
+  // Optionally pre-register one here (e.g. an issuer hosted elsewhere):
+  const issuerDid = process.env.ISSUER_DID || '';
+  const controller = process.env.ISSUER_CONTROLLER_ADDRESS || '';
   if (issuerDid && controller) {
     const tx = await issuerRegistry.registerIssuer(issuerDid, controller, process.env.ISSUER_METADATA_URI || '');
     await tx.wait();
     console.log(`Registered issuer ${issuerDid} (controller ${controller})`);
   } else {
-    console.log('No ISSUER_DID / ISSUER_CONTROLLER_ADDRESS set; skipping issuer registration.');
+    console.log('Universities will be accredited from the admin dashboard.');
   }
 }
 

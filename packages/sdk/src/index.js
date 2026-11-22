@@ -6,3 +6,4 @@ export * from './credential.js';
 export * from './chain.js';
 export * from './merkle.js';
 export * from './verify.js';
+export * from './keywrap.js';

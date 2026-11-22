@@ -14,7 +14,8 @@
     "./credential": "./src/credential.js",
     "./chain": "./src/chain.js",
     "./merkle": "./src/merkle.js",
-    "./verify": "./src/verify.js"
+    "./verify": "./src/verify.js",
+    "./keywrap": "./src/keywrap.js"
   },
   "files": [
     "src",
