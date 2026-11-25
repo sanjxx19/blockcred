@@ -37,12 +37,15 @@ export function createProvider(rpcUrls, chainId) {
     .filter(Boolean);
   if (!urls.length) throw new Error('At least one RPC URL is required');
   const network = Network.from(Number(chainId));
-  const providers = urls.map((u) => new JsonRpcProvider(u, network, { staticNetwork: network }));
+  // cacheTimeout -1: ethers caches identical RPC calls for 250 ms by default, so the second of two
+  // back-to-back sends (approve = registerIssuer + fund) read a stale eth_getTransactionCount and
+  // failed with "nonce has already been used" on fast chains.
+  const providers = urls.map((u) => new JsonRpcProvider(u, network, { staticNetwork: network, cacheTimeout: -1 }));
   if (providers.length === 1) return providers[0];
   return new FallbackProvider(
     providers.map((provider, i) => ({ provider, priority: i + 1, weight: 1, stallTimeout: 1500 })),
     network,
-    { quorum: 1 },
+    { quorum: 1, cacheTimeout: -1 },
   );
 }
 
